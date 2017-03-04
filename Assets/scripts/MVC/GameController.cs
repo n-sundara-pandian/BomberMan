@@ -9,13 +9,13 @@ public class GameController : Controller<Game>
     void Start()
     {
         app.model.Init();
-        app.view.Init();
         Invoke("StartLater", 0.25f);
     }
 
     void StartLater()
     {
         app.view.GenerateWorld();
+        app.view.SpawnPlayers();
     }
 
     public void Replay()

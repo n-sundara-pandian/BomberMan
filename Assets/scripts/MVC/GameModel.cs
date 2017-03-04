@@ -4,22 +4,23 @@ using System.Collections.Generic;
 using thelab.mvc;
 using UnityEngine.SceneManagement;
 
-public struct Level
+public class Level
 {
-    public List<Block> LevelData;
+    public List<Block> LevelData = new List<Block>();
+    public List<Block> EmptyBlocks = new List<Block>();
+    public List<Block> SpecialBlocks = new List<Block>();
     public int Row;
     public int Col;
-    public void Init(int r, int c )
+    public void Init()
     {
-        LevelData = new List<Block>();
-        Row = r;
-        Col = c;
+        Row = Utils.Row;
+        Col = Utils.Col;
         for (int i = 0; i < Row; i++)
         {
             for (int j = 0; j < Col; j++)
             {
                 Block block = new Block();
-                int id = GetIDFromRC(i, j); 
+                int id = Utils.GetIDFromRC(i, j); 
                 if ((i % 2 == 1) && (j % 2 == 1))
                 {
                     block.Init(id, GameModel.BlockType.NonBreakable, GameModel.SubType.Empty);
@@ -27,6 +28,10 @@ public struct Level
                 else
                 {
                     block.Init(id, GameModel.BlockType.Breakable, GetSubBlock(i, j));
+                    if (block.subType == GameModel.SubType.Empty)
+                        EmptyBlocks.Add(block);
+                    else
+                        SpecialBlocks.Add(block);
                 }
                 LevelData.Add(block);
             }
@@ -49,18 +54,13 @@ public struct Level
         return st;
     }
 
-    public int GetIDFromRC(int r,int c)
-    {
-        return r* Col +c;
-    }
-    public void GetRCFromID(int id, out int r, out int c)
-    {
-        r = id / Col;
-        c = id % Col;
-    }
     public Block Get(int id)
     {
         return LevelData[id];
+    }
+    public Block GetEmptyBlock()
+    {
+        return EmptyBlocks[Random.Range(0, EmptyBlocks.Count)];
     }
 }
 public struct Block
@@ -95,13 +95,28 @@ public class GameModel : Model<Game>
         RemoteDetonator,
     }
     Level GameLevel = new Level();
+    Player Player1 = new Player();
+    Player Player2 = new Player();
     public void Init()
     {
-        GameLevel.Init(Random.Range(20, 25), Random.Range(20, 25));
+        Utils.Row = Random.Range(10, 15);
+        Utils.Col = Random.Range(20, 25);
+        GameLevel.Init();
+        int p1_spawn_block = GameLevel.GetEmptyBlock().id;
+        Player1.Init(0, p1_spawn_block);
+        int p2_spawn_block = GameLevel.GetEmptyBlock().id;
+        while(p1_spawn_block == p2_spawn_block)
+            p2_spawn_block = GameLevel.GetEmptyBlock().id;
+        Player2.Init(1, p2_spawn_block);
     }
     public Level GetLevel()
     {
         return GameLevel;
+    }
+    public Player GetPlayer(int player_no)
+    {
+        if (player_no == 2) return Player2;
+        return Player1;
     }
     void Update()
     {

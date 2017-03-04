@@ -6,6 +6,8 @@ using UnityEngine.SceneManagement;
 using DG.Tweening;
 using thelab.mvc;
 using UnityEngine.Events;
+using UnityStandardAssets.Characters.ThirdPerson;
+using UnityStandardAssets.Utility;
 
 public class GameView : View<Game>
 {
@@ -14,10 +16,12 @@ public class GameView : View<Game>
     public GameObject[] WallPrefab;
     public GameObject FloorPrefab;
     public GameObject RefPoint;
-    Vector3 floorOffset = new Vector3(2, 0, 2);
-    public void Init()
-    {
-    }
+    public GameObject PlayerPrefab;
+    public Transform BlocksRoot;
+    public FollowTarget GameCamera;
+
+    Vector3 floorOffset = Vector3.zero;// new Vector3(2, 0, 2);
+
     void GenerateWalls(int Row, int Col)
     {
         Vector3 refPos = RefPoint.transform.position + floorOffset;
@@ -36,21 +40,21 @@ public class GameView : View<Game>
     public void GenerateWorld()
     {
         Level level = app.model.GetLevel();
-        Debug.Log(" Row : " + level.Row + " Col : " + level.Col);
         Vector3 refPos = RefPoint.transform.position + floorOffset;
-        FloorPrefab.transform.position = RefPoint.transform.position;
+        FloorPrefab.transform.position = Vector3.zero;
         FloorPrefab.transform.localScale = new Vector3(level.Row + 4, 0.2f, level.Col + 4);
         foreach (Block blk in level.LevelData)
         {
             int r;
             int c;
-            level.GetRCFromID(blk.id, out r, out c);
+            Utils.GetRCFromID(blk.id, out r, out c);
             switch (blk.type)
             {
                 case GameModel.BlockType.NonBreakable:
                     {
                         GameObject obj = Instantiate<GameObject>(StaticBlockPrefab, refPos + new Vector3(r, 0.5f, c), Quaternion.identity);
                         obj.name = blk.id.ToString();
+                        obj.transform.parent = BlocksRoot;
                         break;
                     }
                 case GameModel.BlockType.Breakable:
@@ -63,7 +67,9 @@ public class GameView : View<Game>
                                 }
                             default:
                                 {
-                                   // Instantiate<GameObject>(DynamicBlockPrefab, refPos + new Vector3(r, 0.5f, c), Quaternion.identity);
+                                    GameObject obj = Instantiate<GameObject>(DynamicBlockPrefab, refPos + new Vector3(r, 0.5f, c), Quaternion.identity);
+                                    obj.name = blk.id.ToString();
+                                    obj.transform.parent = BlocksRoot;
                                     break;
                                 }
                         }
@@ -73,9 +79,30 @@ public class GameView : View<Game>
         }
         GenerateWalls(level.Row, level.Col);
     }
-    void Update()
+    public void SpawnPlayers()
     {
+        SetupPlayer(1);
+        SetupPlayer(2);
+    }
 
+    void SetupPlayer(int player_no)
+    {
+        Vector3 refPos = RefPoint.transform.position + floorOffset;
+        int r;
+        int c;
+        Player info = app.model.GetPlayer(player_no);
+        Utils.GetRCFromID(info.CurrentCell, out r, out c);
+        GameObject obj = Instantiate<GameObject>(PlayerPrefab, refPos + new Vector3(r, 0.5f, c), Quaternion.identity);
+        obj.name = "P" + player_no;
+        obj.transform.parent = BlocksRoot;
+        Dictionary<string, string> param_list = new Dictionary<string, string>();
+        param_list.Add("Horizontal", "Horizontal" + obj.name);
+        param_list.Add("Vertical", "Vertical" + obj.name);
+        param_list.Add("Action", ((player_no == 1)?"right ":"left ") + "ctrl" );
+        param_list.Add("Id", player_no.ToString());
+        ThirdPersonUserControl user_control = obj.GetComponent<ThirdPersonUserControl>();
+        user_control.Init(param_list);
+        GameCamera.SetPlayer(player_no, obj.transform);
     }
 
 }

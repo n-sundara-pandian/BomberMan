@@ -8,16 +8,21 @@ namespace UnityStandardAssets.Utility
     public class FollowTarget : MonoBehaviour
     {
         public Transform target;
-        public float MinHeight = 8;
-        public Vector3 offset = new Vector3(0f, 7.5f, 0f);
-        public List<Transform> TargetList = new List<Transform>();
-        public Transform p1;
-        public Transform p2;
+        float MinHeight = 8;
+        Vector3 offset = new Vector3(0f, 7.5f, 0f);
+        Transform player1 = null;
+        Transform player2 = null;
         Vector3 velocity = Vector3.zero;
+        public void SetPlayer(int player_no, Transform t)
+        {
+            if (player_no == 1) player1 = t;
+            else player2 = t;
+        }
         void UpdateTargetTransform()
         {
-            Vector3 MeanPoint = (p2.localPosition - p1.localPosition) /2 + p1.localPosition;
-            Vector3 dist = p2.position - p1.position;
+            if (player1 == null || player1 == null) return;
+            Vector3 MeanPoint = (player2.localPosition - player1.localPosition) /2 + player1.localPosition;
+            Vector3 dist = player2.position - player1.position;
             float height = dist.magnitude * 1.25f;
             offset = MeanPoint;
             if (height < MinHeight) height = MinHeight;
