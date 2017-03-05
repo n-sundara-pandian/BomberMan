@@ -15,6 +15,7 @@ public class ThirdPersonUserControl : Controller<Game>
     public GameObject BombPrefab;
     int Id;
     List<Bomb> ActiveBombList = new List<Bomb>();
+    Player Owner;
     private void Start()
     {
         m_Character = GetComponent<ThirdPersonCharacter>();
@@ -27,6 +28,11 @@ public class ThirdPersonUserControl : Controller<Game>
         Action = param_list["Action"];
         Id = int.Parse(param_list["Id"]);
         Inited = true;
+        Owner = app.model.GetPlayer(Id);
+
+        Renderer[] renderer_list = gameObject.GetComponentsInChildren<Renderer>();
+        for(int i = 0; i < renderer_list.Length; i++)
+            renderer_list[i].material.SetColor("_Color", (Id == 1)?Color.red:Color.green);
     }
 
 
@@ -35,6 +41,8 @@ public class ThirdPersonUserControl : Controller<Game>
     {
         if (!Inited)
             return;
+        if (app.model.GetGameOver())
+            return;
         // read inputs
         float h = CrossPlatformInputManager.GetAxis(Horizontal);
         float v = CrossPlatformInputManager.GetAxis(Vertical);
@@ -42,30 +50,25 @@ public class ThirdPersonUserControl : Controller<Game>
         m_Move = v*Vector3.forward + h*Vector3.right;           
         // pass all parameters to the character control script
         m_Character.Move(m_Move);
+        int x = Utils.ceilOrFloor(m_Character.transform.position.x);
+        int z = Utils.ceilOrFloor(m_Character.transform.position.z);
+        Owner.CurrentCell = Utils.GetIDFromRC(x, z);
     }
-    int ceilOrFloor(float v)
-    {
-        if (v < 0) return 0;
-        int intv = (int)v;
-        float diff = v - intv;
-        if (diff > 0.5f) return Mathf.CeilToInt(v);
-        else return Mathf.FloorToInt(v);
-    }
+
     void Update()
     {
+        if (app.model.GetGameOver())
+            return;
+        if (String.IsNullOrEmpty(Action))
+            return;
         if(Input.GetKeyUp(Action))
         {
-            Player p = app.model.GetPlayer(Id);
-            int x = ceilOrFloor(m_Character.transform.position.x);
-            int z = ceilOrFloor(m_Character.transform.position.z);
-            int cell = Utils.GetIDFromRC(x, z);
             int r, c;
-            Utils.GetRCFromID(cell, out r, out c);
+            Utils.GetRCFromID(Owner.CurrentCell, out r, out c);
             List<Block> affectedBlockList = new List<Block>();
-          //  p.EnableRemoteDetonate();
-            if (p.GetRemoteDetonate())
+            if (Owner.GetRemoteDetonate())
             {
-                if (p.RemoteDetonate())
+                if (Owner.RemoteDetonate())
                 {
                     foreach (Bomb b in ActiveBombList)
                         b.Explode();
@@ -74,17 +77,17 @@ public class ThirdPersonUserControl : Controller<Game>
                 else
                 {
                     Bomb b = MakeBomb(r, c);
-                    b.Init(3.0f, app.model.GetLevel().GetAffectedMap(cell, 3, ref affectedBlockList), p.GetRemoteDetonate(), affectedBlockList);
+                    b.Init(3.0f, app.model.GetLevel().GetAffectedMap(Owner, ref affectedBlockList), Owner.GetRemoteDetonate(), affectedBlockList);
                     ActiveBombList.Add(b);
                 }
 
             }
             else
             {
-                int bomb_count = p.GetBomb();
+                int bomb_count = Owner.AcquireBomb();
                 if (bomb_count >= 0)
                 {
-                    MakeBomb(r, c).Init(3.0f, app.model.GetLevel().GetAffectedMap(cell, 3, ref affectedBlockList), p.GetRemoteDetonate(), affectedBlockList);
+                    MakeBomb(r, c).Init(3.0f, app.model.GetLevel().GetAffectedMap(Owner, ref affectedBlockList), Owner.GetRemoteDetonate(), affectedBlockList);
                 }
             }
         }
@@ -101,13 +104,19 @@ public class ThirdPersonUserControl : Controller<Game>
     }
     void ReplenishPlayer()
     {
-        Player p = app.model.GetPlayer(Id);
-        p.ReplenishBombCount();
+        Owner.ReplenishBombCount();
     }
     void DestroyBlocks(List<Block> DestroyList)
     {
-        app.model.DestroyBlocks(DestroyList);
-        app.view.DestroyBlocks(DestroyList);
+        app.view.DestroyBlocks(DestroyList, Owner);
+        app.model.DestroyBlocks(DestroyList, Owner);
     }
-
+    void OnCollisionEnter(Collision collision)
+    {
+        if(collision.collider.CompareTag("AiBot"))
+        {
+            Debug.Log(" Collided with Bot");
+            app.model.GetPlayer(Id).Die();
+        }
+    }
 }

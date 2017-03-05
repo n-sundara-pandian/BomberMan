@@ -56,7 +56,6 @@ public class Level
         else  st = GameModel.SubType.RemoteDetonator;
         return st;
     }
-
     public Block Get(int id)
     {
         return LevelData[id];
@@ -65,9 +64,12 @@ public class Level
     {
         return EmptyBlocks[Random.Range(0, EmptyBlocks.Count)];
     }
-    public Dictionary<Direction, int> GetAffectedMap(int cell, int depth, ref List<Block> blockList)
+    public Dictionary<Direction, int> GetAffectedMap(Player p, ref List<Block> blockList)
     {
-        Dictionary<Direction, int> affectedMap = new Dictionary<Direction, int>();        
+        int cell = p.CurrentCell;
+        int depth = p.GetBombRange(); 
+        Dictionary<Direction, int> affectedMap = new Dictionary<Direction, int>();
+        blockList.Add(LevelData[cell]);
         affectedMap.Add(Direction.Left, GetDamageDepth(cell, Direction.Left, depth, ref blockList));
         affectedMap.Add(Direction.Right, GetDamageDepth(cell, Direction.Right, depth, ref blockList));
         affectedMap.Add(Direction.Up, GetDamageDepth(cell, Direction.Up, depth, ref blockList));
@@ -121,20 +123,37 @@ public class Level
         }
         return -1;
     }
+    public int GetNextCellForAIToNavigate(int cell, ref Direction dir)
+    {
+        int next_cell = GetNextCell(cell, dir);
+        if (next_cell != -1 && LevelData[next_cell].IsNavigable() )
+            return next_cell;
+        int original_dir = (int)dir;
+        for(int i = 0; i < 4; i++)
+        {
+            dir = (Direction) ((i + original_dir) % 4);
+            next_cell = GetNextCell(cell, dir);
+            if (next_cell != -1 && LevelData[next_cell].IsNavigable())
+                return next_cell;
+        }
+        return next_cell;
+    }
 }
-public struct Block
+public class Block
 {
     public int id;
     public GameModel.BlockType type;
     public GameModel.SubType subType;
-    bool ReadyToDestroyed;
 
     public void Init(int i, GameModel.BlockType t, GameModel.SubType st)
     {
         id = i;
         type = t;
         subType = st;
-        ReadyToDestroyed = false;
+    }
+    public void MakeitEmpty()
+    {
+        subType = GameModel.SubType.Empty;
     }
     public bool CanTakeDamage(out bool count_this, ref List<Block> blockList)
     {
@@ -145,19 +164,26 @@ public struct Block
             return true;
         else if (type == GameModel.BlockType.Breakable)
         {
+            blockList.Add(this);
             if (subType == GameModel.SubType.Empty)
                 return true;
             else
             {
-                blockList.Add(this);
                 count_this = true;
-                ReadyToDestroyed = true;
                 return false;
             }
         }
         return false;
     }
-    bool IsReadyToBeDestroyed() { return ReadyToDestroyed; }
+    public bool IsNavigable()
+    {
+        if (type == GameModel.BlockType.Breakable)
+        {
+            if (subType == GameModel.SubType.Empty)
+                return true;
+        }
+        return false;
+    }
 }
 public class GameModel : Model<Game>
 {
@@ -180,17 +206,31 @@ public class GameModel : Model<Game>
     Level GameLevel = new Level();
     Player Player1 = new Player();
     Player Player2 = new Player();
+    List<Player> AIList = new List<Player>();
+    bool bGameOver = false;
     public void Init()
     {
-        Utils.Row = Random.Range(6, 6);
-        Utils.Col = Random.Range(6, 6);
+        List<int> TempOccupiedBlocks = new List<int>();
+        Utils.Row = Random.Range(20, 6);
+        Utils.Col = Random.Range(20, 10);
         GameLevel.Init();
-        int p1_spawn_block = GameLevel.GetEmptyBlock().id;
-        Player1.Init(0, p1_spawn_block);
-        int p2_spawn_block = GameLevel.GetEmptyBlock().id;
-        while(p1_spawn_block == p2_spawn_block)
-            p2_spawn_block = GameLevel.GetEmptyBlock().id;
-        Player2.Init(1, p2_spawn_block);
+        Player1.Init(0, GetEmptyBlock(ref TempOccupiedBlocks));
+        Player2.Init(1, GetEmptyBlock(ref TempOccupiedBlocks));
+        for (int i = 0; i < Utils.AICount; i++)
+        {
+            Player p = new Player();
+            p.Init(i, GetEmptyBlock(ref TempOccupiedBlocks));
+            AIList.Add(p);
+        }
+        bGameOver = false;
+    }
+    int GetEmptyBlock(ref List<int> TempOccupiedBlocks)
+    {
+        int empty = GameLevel.GetEmptyBlock().id;
+        while (TempOccupiedBlocks.Contains(empty))
+            empty = GameLevel.GetEmptyBlock().id;
+        TempOccupiedBlocks.Add(empty);
+        return empty;
     }
     public Level GetLevel()
     {
@@ -201,18 +241,45 @@ public class GameModel : Model<Game>
         if (player_no == 2) return Player2;
         return Player1;
     }
-    
-    public void DestroyBlocks(List<Block> DestoyList)
+    public Player GetAI(int id)
     {
-        foreach(Block blk in DestoyList)
-        {
-            if(GameLevel.SpecialBlocks.Contains(blk))
-            {
-                //app.vi
-            }
-        }
+        return AIList[id];
     }
-    void Update()
+    public void DestroyBlocks(List<Block> DestoyList, Player p)
     {
+        int score = 0;
+        foreach (Block blk in DestoyList)
+        {
+            if (Player1.CurrentCell == blk.id)
+            {
+                Player1.Die();
+                SetGameOver(true);
+            }
+            if (Player2.CurrentCell == blk.id)
+            {
+                Player2.Die();
+                SetGameOver(true);
+            }
+            if (!blk.IsNavigable()) score += Utils.BlockBreakPoints;
+
+            GameLevel.Get(blk.id).MakeitEmpty();
+        }
+        p.AddScore(score);
+    }
+    public Player OnCharacterTrigger(string playerName)
+    {
+        if (playerName == "P1") return GetPlayer(1);
+        if (playerName == "P2") return GetPlayer(2);
+        return null;
+    }
+    public void SetGameOver(bool flag)
+    {
+        bGameOver = flag;
+    }
+    public bool GetGameOver()
+    {
+        if (!Player1.IsAlive() || !Player2.IsAlive())
+            bGameOver = true;
+        return bGameOver;
     }
 }
