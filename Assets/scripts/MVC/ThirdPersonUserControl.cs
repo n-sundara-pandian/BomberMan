@@ -54,18 +54,15 @@ public class ThirdPersonUserControl : Controller<Game>
     {
         if(Input.GetKeyUp(Action))
         {
-            //int x = (int)Mathf.Clamp(m_Character.transform.position.x, Mathf.FloorToInt(m_Character.transform.position.x), Mathf.CeilToInt(m_Character.transform.position.x));
-            //int z = (int)Mathf.Clamp(m_Character.transform.position.z, Mathf.FloorToInt(m_Character.transform.position.z), Mathf.CeilToInt(m_Character.transform.position.z));
             int x = ceilOrFloor(m_Character.transform.position.x);
             int z = ceilOrFloor(m_Character.transform.position.z);
             int cell = Utils.GetIDFromRC(x, z);
             int r, c;
             Utils.GetRCFromID(cell, out r, out c);
-            Debug.Log("Cell " + cell + " r " + r + " c " + c);
             Vector3 bombPos = new Vector3(r, 0.5f, c); //m_Character.transform.position
             GameObject obj = Instantiate<GameObject>(BombPrefab, bombPos, Quaternion.identity);
             Bomb bomb = obj.GetComponent<Bomb>();
-            bomb.Init(3.0f);
+            bomb.Init(3.0f, app.model.GetLevel().GetAffectedMap(cell, 3));
         }
     }
 }

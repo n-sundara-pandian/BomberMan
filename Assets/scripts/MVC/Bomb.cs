@@ -5,33 +5,32 @@ using UnityEngine;
 public class Bomb : MonoBehaviour {
     public GameObject ExplosionParticlesPrefab;
     int Length;
-    public void Init(float life_time, int length = 1)
+    Dictionary<Level.Direction, int> fx_length_map = new Dictionary<Level.Direction, int>();
+    public void Init(float life_time, Dictionary<Level.Direction, int> length_map,int length = 1)
     {
+        fx_length_map.Clear();
+        fx_length_map = length_map;
         Length = length;
         Invoke("Explode", life_time);
     }
     void Explode()
     {
-        GameObject explosion = (GameObject)Instantiate(ExplosionParticlesPrefab, transform.position, ExplosionParticlesPrefab.transform.rotation);
-        GameObject explosion1 = (GameObject)Instantiate(ExplosionParticlesPrefab, transform.position, ExplosionParticlesPrefab.transform.rotation *= Quaternion.Euler(0, 90, 0));
-        GameObject explosion2 = (GameObject)Instantiate(ExplosionParticlesPrefab, transform.position, ExplosionParticlesPrefab.transform.rotation *= Quaternion.Euler(0, 180, 0));
-        GameObject explosion3 = (GameObject)Instantiate(ExplosionParticlesPrefab, transform.position, ExplosionParticlesPrefab.transform.rotation *= Quaternion.Euler(0, 270, 0));
+        Debug.Log(fx_length_map[Level.Direction.Left] + " " + fx_length_map[Level.Direction.Right] + " " + fx_length_map[Level.Direction.Up] + " " + fx_length_map[Level.Direction.Down] + " ");
+        SetupDiectionalParticle(fx_length_map[Level.Direction.Down], ExplosionParticlesPrefab.transform.rotation);
+        SetupDiectionalParticle(fx_length_map[Level.Direction.Up], ExplosionParticlesPrefab.transform.rotation * Quaternion.Euler(0, 180, 0));
+        SetupDiectionalParticle(fx_length_map[Level.Direction.Left], ExplosionParticlesPrefab.transform.rotation * Quaternion.Euler(0, 90, 0));
+        SetupDiectionalParticle(fx_length_map[Level.Direction.Right], ExplosionParticlesPrefab.transform.rotation * Quaternion.Euler(0, 270, 0));
+        Destroy(gameObject, 0.1f);
+    }
+
+    void SetupDiectionalParticle(int len, Quaternion rot)
+    {
+        if (len <= 0)
+            return;
+        GameObject explosion = (GameObject)Instantiate(ExplosionParticlesPrefab, transform.position, rot);
         ParticleSystem ps = explosion.GetComponent<ParticleSystem>();
         ParticleSystem.ShapeModule pss = ps.shape;
-        pss.length = Length;
-        ps = explosion1.GetComponent<ParticleSystem>();
-        pss = ps.shape;
-        pss.length = Length;
-        ps = explosion2.GetComponent<ParticleSystem>();
-        pss = ps.shape;
-        pss.length = Length;
-        ps = explosion3.GetComponent<ParticleSystem>();
-        pss = ps.shape;
-        pss.length = Length;
+        pss.length = len;
         Destroy(explosion, explosion.GetComponent<ParticleSystem>().main.startLifetime.constant);
-        Destroy(explosion1, explosion1.GetComponent<ParticleSystem>().main.startLifetime.constant);
-        Destroy(explosion2, explosion2.GetComponent<ParticleSystem>().main.startLifetime.constant);
-        Destroy(explosion3, explosion3.GetComponent<ParticleSystem>().main.startLifetime.constant);
-        Destroy(gameObject, 0.1f);
     }
 }
