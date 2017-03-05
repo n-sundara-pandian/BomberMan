@@ -20,11 +20,11 @@ public class GameView : View<Game>
     public Transform BlocksRoot;
     public FollowTarget GameCamera;
 
-    Vector3 floorOffset = Vector3.zero;// new Vector3(2, 0, 2);
+    public Text ScoreText;
 
     void GenerateWalls(int Row, int Col)
     {
-        Vector3 refPos = RefPoint.transform.position + floorOffset;
+        Vector3 refPos = RefPoint.transform.position;
         Vector3 scale = WallPrefab[0].transform.localScale;
         int offset = 1;
         WallPrefab[0].transform.localScale = new Vector3(Row + offset, scale.y, scale.z);
@@ -40,7 +40,7 @@ public class GameView : View<Game>
     public void GenerateWorld()
     {
         Level level = app.model.GetLevel();
-        Vector3 refPos = RefPoint.transform.position + floorOffset;
+        Vector3 refPos = RefPoint.transform.position;
         FloorPrefab.transform.position = Vector3.zero;
         FloorPrefab.transform.localScale = new Vector3(level.Row + 4, 0.2f, level.Col + 4);
         foreach (Block blk in level.LevelData)
@@ -87,7 +87,7 @@ public class GameView : View<Game>
 
     void SetupPlayer(int player_no)
     {
-        Vector3 refPos = RefPoint.transform.position + floorOffset;
+        Vector3 refPos = RefPoint.transform.position;
         int r;
         int c;
         Player info = app.model.GetPlayer(player_no);
@@ -103,6 +103,16 @@ public class GameView : View<Game>
         ThirdPersonUserControl user_control = obj.GetComponent<ThirdPersonUserControl>();
         user_control.Init(param_list);
         GameCamera.SetPlayer(player_no, obj.transform);
+    }
+
+    public void DestroyBlocks(List<Block> blockList)
+    {
+        foreach (Block blk in blockList)
+        {
+            Transform t = BlocksRoot.Find(blk.id.ToString());
+            if (t != null)
+                Destroy(t.gameObject);
+        }
     }
 
 }

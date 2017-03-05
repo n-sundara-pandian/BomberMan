@@ -65,16 +65,16 @@ public class Level
     {
         return EmptyBlocks[Random.Range(0, EmptyBlocks.Count)];
     }
-    public Dictionary<Direction, int> GetAffectedMap(int cell, int depth)
+    public Dictionary<Direction, int> GetAffectedMap(int cell, int depth, ref List<Block> blockList)
     {
-        Dictionary<Direction, int> affectedMap = new Dictionary<Direction, int>();
-        affectedMap.Add(Direction.Left, GetDamageDepth(cell, Direction.Left, depth));
-        affectedMap.Add(Direction.Right, GetDamageDepth(cell, Direction.Right, depth));
-        affectedMap.Add(Direction.Up, GetDamageDepth(cell, Direction.Up, depth));
-        affectedMap.Add(Direction.Down, GetDamageDepth(cell, Direction.Down, depth));
+        Dictionary<Direction, int> affectedMap = new Dictionary<Direction, int>();        
+        affectedMap.Add(Direction.Left, GetDamageDepth(cell, Direction.Left, depth, ref blockList));
+        affectedMap.Add(Direction.Right, GetDamageDepth(cell, Direction.Right, depth, ref blockList));
+        affectedMap.Add(Direction.Up, GetDamageDepth(cell, Direction.Up, depth, ref blockList));
+        affectedMap.Add(Direction.Down, GetDamageDepth(cell, Direction.Down, depth, ref blockList));
         return affectedMap;
     }
-    int GetDamageDepth(int cell,Direction dir, int distance)
+    int GetDamageDepth(int cell,Direction dir, int distance, ref List<Block> blockList)
     {
         int depth = 0;
         int next_cell = GetNextCell(cell, dir);
@@ -83,7 +83,7 @@ public class Level
             if (next_cell == -1)
                 break;
             bool can_count;
-            if (!LevelData[next_cell].CanTakeDamage(out can_count))
+            if (!LevelData[next_cell].CanTakeDamage(out can_count, ref blockList))
             {
                 if (can_count) depth = i + 1;
                 break;
@@ -127,14 +127,16 @@ public struct Block
     public int id;
     public GameModel.BlockType type;
     public GameModel.SubType subType;
+    bool ReadyToDestroyed;
 
     public void Init(int i, GameModel.BlockType t, GameModel.SubType st)
     {
         id = i;
         type = t;
         subType = st;
+        ReadyToDestroyed = false;
     }
-    public bool CanTakeDamage(out bool count_this)
+    public bool CanTakeDamage(out bool count_this, ref List<Block> blockList)
     {
         count_this = false;
         if (type == GameModel.BlockType.NonBreakable)
@@ -147,12 +149,15 @@ public struct Block
                 return true;
             else
             {
+                blockList.Add(this);
                 count_this = true;
+                ReadyToDestroyed = true;
                 return false;
             }
         }
         return false;
     }
+    bool IsReadyToBeDestroyed() { return ReadyToDestroyed; }
 }
 public class GameModel : Model<Game>
 {
@@ -197,6 +202,16 @@ public class GameModel : Model<Game>
         return Player1;
     }
     
+    public void DestroyBlocks(List<Block> DestoyList)
+    {
+        foreach(Block blk in DestoyList)
+        {
+            if(GameLevel.SpecialBlocks.Contains(blk))
+            {
+                //app.vi
+            }
+        }
+    }
     void Update()
     {
     }

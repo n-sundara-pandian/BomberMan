@@ -4,23 +4,29 @@ using UnityEngine;
 
 public class Bomb : MonoBehaviour {
     public GameObject ExplosionParticlesPrefab;
-    int Length;
     Dictionary<Level.Direction, int> fx_length_map = new Dictionary<Level.Direction, int>();
-    public void Init(float life_time, Dictionary<Level.Direction, int> length_map,int length = 1)
+    public delegate void ReplenishBomb();
+    public delegate void DestoyAffectedBlocks(List<Block> block_list);
+    public event ReplenishBomb Replenish;
+    public event DestoyAffectedBlocks DestroyBlocks;
+    List<Block> AffectedBlockList = new List<Block>();
+    public void Init(float life_time, Dictionary<Level.Direction, int> length_map, bool remote, List<Block> block_list)
     {
         fx_length_map.Clear();
         fx_length_map = length_map;
-        Length = length;
-        Invoke("Explode", life_time);
+        AffectedBlockList = block_list;
+        if (!remote)
+            Invoke("Explode", life_time);
     }
-    void Explode()
+    public void Explode()
     {
-        Debug.Log(fx_length_map[Level.Direction.Left] + " " + fx_length_map[Level.Direction.Right] + " " + fx_length_map[Level.Direction.Up] + " " + fx_length_map[Level.Direction.Down] + " ");
         SetupDiectionalParticle(fx_length_map[Level.Direction.Down], ExplosionParticlesPrefab.transform.rotation);
         SetupDiectionalParticle(fx_length_map[Level.Direction.Up], ExplosionParticlesPrefab.transform.rotation * Quaternion.Euler(0, 180, 0));
         SetupDiectionalParticle(fx_length_map[Level.Direction.Left], ExplosionParticlesPrefab.transform.rotation * Quaternion.Euler(0, 90, 0));
         SetupDiectionalParticle(fx_length_map[Level.Direction.Right], ExplosionParticlesPrefab.transform.rotation * Quaternion.Euler(0, 270, 0));
         Destroy(gameObject, 0.1f);
+        Replenish();
+        DestroyBlocks(AffectedBlockList);
     }
 
     void SetupDiectionalParticle(int len, Quaternion rot)

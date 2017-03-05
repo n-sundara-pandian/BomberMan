@@ -14,6 +14,7 @@ public class ThirdPersonUserControl : Controller<Game>
     bool Inited = false;
     public GameObject BombPrefab;
     int Id;
+    List<Bomb> ActiveBombList = new List<Bomb>();
     private void Start()
     {
         m_Character = GetComponent<ThirdPersonCharacter>();
@@ -54,15 +55,59 @@ public class ThirdPersonUserControl : Controller<Game>
     {
         if(Input.GetKeyUp(Action))
         {
+            Player p = app.model.GetPlayer(Id);
             int x = ceilOrFloor(m_Character.transform.position.x);
             int z = ceilOrFloor(m_Character.transform.position.z);
             int cell = Utils.GetIDFromRC(x, z);
             int r, c;
             Utils.GetRCFromID(cell, out r, out c);
-            Vector3 bombPos = new Vector3(r, 0.5f, c); //m_Character.transform.position
-            GameObject obj = Instantiate<GameObject>(BombPrefab, bombPos, Quaternion.identity);
-            Bomb bomb = obj.GetComponent<Bomb>();
-            bomb.Init(3.0f, app.model.GetLevel().GetAffectedMap(cell, 3));
+            List<Block> affectedBlockList = new List<Block>();
+          //  p.EnableRemoteDetonate();
+            if (p.GetRemoteDetonate())
+            {
+                if (p.RemoteDetonate())
+                {
+                    foreach (Bomb b in ActiveBombList)
+                        b.Explode();
+                    ActiveBombList.Clear();
+                }
+                else
+                {
+                    Bomb b = MakeBomb(r, c);
+                    b.Init(3.0f, app.model.GetLevel().GetAffectedMap(cell, 3, ref affectedBlockList), p.GetRemoteDetonate(), affectedBlockList);
+                    ActiveBombList.Add(b);
+                }
+
+            }
+            else
+            {
+                int bomb_count = p.GetBomb();
+                if (bomb_count >= 0)
+                {
+                    MakeBomb(r, c).Init(3.0f, app.model.GetLevel().GetAffectedMap(cell, 3, ref affectedBlockList), p.GetRemoteDetonate(), affectedBlockList);
+                }
+            }
         }
     }
+
+    Bomb MakeBomb(int r, int c)
+    {
+        Vector3 bombPos = new Vector3(r, 0.5f, c);
+        GameObject obj = Instantiate<GameObject>(BombPrefab, bombPos, Quaternion.identity);
+        Bomb bomb = obj.GetComponent<Bomb>();
+        bomb.Replenish += ReplenishPlayer;
+        bomb.DestroyBlocks += DestroyBlocks;
+        return bomb;
+    }
+    void ReplenishPlayer()
+    {
+        Player p = app.model.GetPlayer(Id);
+        p.ReplenishBombCount();
+    }
+    void DestroyBlocks(List<Block> DestroyList)
+    {
+        app.model.DestroyBlocks(DestroyList);
+        app.view.DestroyBlocks(DestroyList);
+    }
+
 }

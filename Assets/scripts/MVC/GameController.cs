@@ -6,6 +6,8 @@ using UnityEngine.SceneManagement;
 
 public class GameController : Controller<Game>
 {
+    public delegate void ReplenishBomb(Player p);
+    public static event ReplenishBomb Replenish;
     void Start()
     {
         app.model.Init();
@@ -25,5 +27,10 @@ public class GameController : Controller<Game>
     public void Exit()
     {
         SceneManager.LoadScene("Menu", LoadSceneMode.Single);
+    }
+    public void OnReplenishBomb(Player p)
+    {
+        Debug.Log(" Bomb Replenished for plare " + p.CurrentCell);
+ 
     }
 }

@@ -5,9 +5,10 @@ using thelab.mvc;
 
 public class Player {
     // Use this for initialization
-    bool CanDetonateRemotely = false;
-    float RemoteTimer = 0.0f;
-    int BombAmount = 1;
+    bool CanRemoteDetonate = false;
+    bool RemotePower = false;
+    int BombCount = 2;
+    int MaxBombCount = 3;
     int BombRange = 1;
     float RunSpeed = 1.0f;
     public int CurrentCell = 0;
@@ -17,5 +18,52 @@ public class Player {
         Id = id;
         CurrentCell = cell;
         Debug.Log("Player " + Id + " Spawned at " + cell);
+    }
+
+    public void EnableRemoteDetonate()
+    {
+        RemotePower = true;
+    }
+    public bool RemoteDetonate ()
+    {
+        CanRemoteDetonate = !CanRemoteDetonate;
+        return !CanRemoteDetonate;
+    }
+    public bool GetRemoteDetonate()
+    {
+        return RemotePower;
+    }
+    public void IncBombRange()
+    {
+        BombRange++;
+    }
+    public int GetBombRange()
+    {
+        return BombRange;
+    }
+    public void ResetRunSpeed()
+    {
+        RunSpeed = 1.0f;
+    }
+    public void IncRunSpeed()
+    {
+        RunSpeed += 1.0f;
+    }
+    public float GetRunSpeed()
+    {
+        return RunSpeed;
+    }
+    public int GetBomb()
+    {
+        BombCount--;
+        return BombCount;
+    } 
+    public void ReplenishBombCount()
+    {
+        if (BombCount < 0)
+            BombCount = 0;
+        BombCount++;
+        if (BombCount > MaxBombCount)
+            BombCount = MaxBombCount;
     }
 }
