@@ -7,7 +7,7 @@ public class Player {
     // Use this for initialization
     bool CanRemoteDetonate = false;
     bool RemotePower = false;
-    int BombCount = 1;
+    int BombCount = 3;
     int MaxBombCount = 3;
     int BombRange = 1;
     float RunSpeed = 1.0f;

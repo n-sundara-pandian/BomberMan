@@ -6,10 +6,11 @@ public class Utils : MonoBehaviour {
     public static int Row = -1;
     public static int Col = -1;
     public static int LevelFinishTime = 100;
-    public static int AICount = 5;
+    public static int AICount = 3;
     public static int AIKillPoints = 200;
     public static int PickupPoints = 50;
     public static int BlockBreakPoints = 100;
+    public static int BombExplodeDelay = 10;
     public static int GetIDFromRC(int r, int c)
     {
         return r * Col + c;
