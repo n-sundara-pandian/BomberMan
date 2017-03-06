@@ -105,6 +105,7 @@ public class ThirdPersonUserControl : Controller<Game>
     void ReplenishPlayer()
     {
         Owner.ReplenishBombCount();
+        app.view.PlayOneShot("bomb");
     }
     void DestroyBlocks(List<Block> DestroyList)
     {

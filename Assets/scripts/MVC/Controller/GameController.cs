@@ -47,6 +47,8 @@ public class GameController : Controller<Game>
         else if (player2_alive && !player1_alive) result = " Player 2 Wins";
         app.model.SetGameOver(true);
         app.view.ShowGameOverScreen(result);
+        PlayerPrefs.SetInt("P1", app.model.GetPlayer(1).GetScore());
+        PlayerPrefs.SetInt("P2", app.model.GetPlayer(2).GetScore());
     }
     public void Replay()
     {
@@ -54,8 +56,7 @@ public class GameController : Controller<Game>
     }
     public void Exit()
     {
-        //SceneManager.LoadScene("Menu", LoadSceneMode.Single);
-        Application.Quit();
+        SceneManager.LoadScene("Menu", LoadSceneMode.Single);
     }
  
 }

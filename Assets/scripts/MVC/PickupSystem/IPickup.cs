@@ -12,9 +12,11 @@ public class Pickup : View<Game>, IPickup
     public virtual void Action(Player p){}
     protected void OnTriggerEnter(Collider collider)
     {
+
         Player p = app.model.OnCharacterTrigger(collider.name);
         if (p != null) // pickup successfully picked up
         {
+            app.view.PlayOneShot("pickup");
             Action(p);
             Destroy(gameObject, 0.1f);
         }

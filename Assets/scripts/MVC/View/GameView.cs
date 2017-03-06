@@ -40,7 +40,14 @@ public class GameView : View<Game>
 
     public Text ResultText;
 
+    public GameObject LoadingScreen;
     public GameObject GameOverScreen;
+
+    public AudioSource AudioSrc;
+    public AudioClip PickupAudio;
+    public AudioClip ExplodeAudio;
+    public AudioClip DeathAudio;
+
 
     Dictionary<string, string> HudData = new Dictionary<string, string>();
     List<GameObject> AIPlayers = new List<GameObject>();
@@ -61,6 +68,7 @@ public class GameView : View<Game>
     }
     public void Init()
     {
+        ShowLoadingScreen();
         HudData.Add("LevelTimer", Utils.LevelFinishTime.ToString());
         HideGameOverScreen();
     }
@@ -111,6 +119,7 @@ public class GameView : View<Game>
     {
         SetupPlayer(1);
         SetupPlayer(2);
+        HideLoadingScreen();
     }
 
     public void SpawnAI()
@@ -149,7 +158,7 @@ public class GameView : View<Game>
         param_list.Add("Id", player_no.ToString());
         ThirdPersonUserControl user_control = obj.GetComponent<ThirdPersonUserControl>();
         user_control.Init(param_list);
-        GameCamera.SetPlayer(player_no, obj.transform);
+        GameCamera.SetPlayer(player_no, obj.transform);        
     }
 
     public void DestroyBlocks(List<Block> blockList, Player p)
@@ -165,6 +174,7 @@ public class GameView : View<Game>
                 if (app.model.GetAI(i).CurrentCell == blk.id && app.model.GetAI(i).IsAlive())
                 {
                     app.model.GetAI(i).Die();
+                    PlayOneShot("death");
                     AIPlayers[i].SetActive(false);
                     p.AddScore(Utils.AIKillPoints);
                 }
@@ -239,5 +249,22 @@ public class GameView : View<Game>
         ResultText.text = "";
         Time.timeScale = 1.0f;
         GameOverScreen.transform.DOScale(0, 0.1f);
+    }
+    void ShowLoadingScreen()
+    {
+        LoadingScreen.transform.DOScale(1, 0.1f);
+    }
+    void HideLoadingScreen()
+    {
+        LoadingScreen.transform.DOScale(0, 0.1f);
+    }
+    public void PlayOneShot(string type)
+    {
+        if (type == "pickup")
+            AudioSrc.PlayOneShot(PickupAudio);
+        else if(type == "death")
+            AudioSrc.PlayOneShot(DeathAudio);
+        else if (type == "bomb")
+            AudioSrc.PlayOneShot(ExplodeAudio);
     }
 }

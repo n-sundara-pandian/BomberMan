@@ -21,17 +21,20 @@ public class AINavigation : Controller<Game>
         m_Character.transform.position = new Vector3(r, 0.25f, c);
         m_Character.SetMoveSpeedMultiplier(0.25f);
     }
-    private void FixedUpdate()
+    void ConsiderChangingDirection()
     {
         if (!Owner.IsAlive())
             return;
         int next_cell = app.model.GetLevel().GetNextCellForAIToNavigate(Owner.CurrentCell, ref CurrentDirection);
         if (next_cell == -1)
             return;
+    }
+    private void FixedUpdate()
+    {
         // read inputs
-        float h = 0; //CrossPlatformInputManager.GetAxis(Horizontal);
-        float v = 0;// CrossPlatformInputManager.GetAxis(Vertical);
-        // we use world-relative directions in the case of no main camera
+        float h = 0;
+        float v = 0;
+        
         switch(CurrentDirection)
         {
             case Level.Direction.Left:
@@ -62,5 +65,14 @@ public class AINavigation : Controller<Game>
         int z = Utils.ceilOrFloor(m_Character.transform.position.z);
         Owner.CurrentCell = Utils.GetIDFromRC(x, z);
     }
-
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Block") || collision.gameObject.CompareTag("AiBot"))
+            ConsiderChangingDirection();
+    }
+    void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Block") || collision.gameObject.CompareTag("AiBot"))
+            ConsiderChangingDirection();
+    }
 }

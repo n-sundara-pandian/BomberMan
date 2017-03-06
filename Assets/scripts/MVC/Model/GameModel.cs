@@ -253,11 +253,13 @@ public class GameModel : Model<Game>
             if (Player1.CurrentCell == blk.id)
             {
                 Player1.Die();
+                app.view.PlayOneShot("death");
                 SetGameOver(true);
             }
             if (Player2.CurrentCell == blk.id)
             {
                 Player2.Die();
+                app.view.PlayOneShot("death");
                 SetGameOver(true);
             }
             if (!blk.IsNavigable()) score += Utils.BlockBreakPoints;
