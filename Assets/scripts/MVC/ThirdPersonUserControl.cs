@@ -114,9 +114,6 @@ public class ThirdPersonUserControl : Controller<Game>
     void OnCollisionEnter(Collision collision)
     {
         if(collision.collider.CompareTag("AiBot"))
-        {
-            Debug.Log(" Collided with Bot");
             app.model.GetPlayer(Id).Die();
-        }
     }
 }

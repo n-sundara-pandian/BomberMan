@@ -228,11 +228,16 @@ public class GameView : View<Game>
     public void ShowGameOverScreen(string result)
     {
         ResultText.text = result;
-        GameOverScreen.transform.DOScale(1, 1.0f);
+        GameOverScreen.transform.DOScale(1, 1.0f).OnComplete(FreezeTime);
+    }
+    void FreezeTime()
+    {
+        Time.timeScale = 0.0f;
     }
     public void HideGameOverScreen()
     {
         ResultText.text = "";
+        Time.timeScale = 1.0f;
         GameOverScreen.transform.DOScale(0, 0.1f);
     }
 }
